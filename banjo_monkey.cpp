@@ -18,56 +18,6 @@
  #include "lib/SparkDallas/spark-dallas-temperature.h"
  #include "banjo_monkey.h"
 
-//Declarations
-MicroOLED oled;
- OneWire oneWire(ONE_WIRE_BUS);
- DallasTemperature sensor(&oneWire);
- HttpClient http;
-
-//Globals
-bool debug = true;
-  bool gettempflag = true;
-  char* ubivar[]={"55e751bc7625423275a3a625", "55e751df7625423276297c4a", "55e752067625423276297c69","55e75229762542328e46adf6"};
-  char resultstr[64];
-  int button = D4;
-  int buttonvalue = 0;
-  int displayMode = 2;
-  int deviceCount, lastDeviceCount, lastime, mycounter,thistime, lasttime = 0;
-  int prevPos = 0;
-  int value = 0;
-  int encoderA = A0;
-  int encoderB = A1;
-  int mydelay = 250;
-  int relay = D3;
-  float temperature = 0.0;
-  int relayHoldDown = 30000;
-
- //devices
- // encolusre address   deviceIndexArray[0]:  28 7E F7 25 03 00 00 77
-  DeviceAddress deviceIndexArray[5];  //dynamic Array
-  DeviceAddress outsideAddress = { 0x28, 0xe, 0x52, 0x58, 0x6, 0x0, 0x0, 0xe };
-  DeviceAddress floorAddress = { 0x28, 0x56, 0xB1, 0x3A, 0x06, 0x00, 0x00, 0x82 };
-  DeviceAddress pitAddress = { 0x28, 0x31, 0x26, 0x59, 0x06, 0x00, 0x00, 0x3A };
-  DeviceAddress boardAddress = { 0x28, 0x7E, 0xF7, 0x25, 0x03, 0x00, 0x00, 0x77 };
-  DeviceAddress*  deviceAddressArray[4] =  { &outsideAddress, &floorAddress, &pitAddress, &boardAddress } ;
-  String deviceNames[4]= { "out", "flr", "pit", "brd" };
-
-  http_header_t headers[] = {
-        { "Content-Type", "application/json" },
-        { "X-Auth-Token" , TOKEN },
-      { NULL, NULL } // NOTE: Always terminate headers will NULL
-  };
-  http_request_t request;
-  http_response_t response;
-
-  volatile bool A_set = false;
-  volatile bool B_set = false;
-  volatile int encoderPos = 0;
-  Timer relayTimer(relayHoldDown, expireRelay);
-
-
-
-
 
 
 void setup()
