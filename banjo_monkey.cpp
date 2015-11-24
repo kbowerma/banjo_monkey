@@ -19,7 +19,6 @@
  #include "banjo_monkey.h"
 
 
-
 void setup()
 {
 
@@ -74,11 +73,19 @@ void setup()
 
 void loop()
 {
+
+  //  New block to identify device count changes
+  lastDeviceCount = deviceCount;
+  deviceCount = getDeviceCount();
+  //end New block
   mycounter++;
 
   if(lastDeviceCount != deviceCount ) {  //device count changes   this never works
     oled.clear(ALL); // Clear the display's internal memory
     oled.display();  // Display what's in the buffer (splashscreen)
+    oled.setCursor(0,0);
+    //oled << "Count " << endl << "changed " << endl <<  lastDeviceCount << " " << deviceCount << endl;
+    oled.display();
     //delay(1000);     // Delay 1000 ms
     oled.clear(PAGE); // Clear the buffer.
     Serial << " The device Count Changed " << lastDeviceCount << " " <<  deviceCount << endl;
@@ -90,8 +97,8 @@ void loop()
     if ( deviceCount > 0 ) {
       temperatureJob();  // do the main temprature job
     }
-
-    lastDeviceCount = getDeviceCount();  // used to detect
+    //  I think this is wrong
+    // lastDeviceCount = getDeviceCount();  // used to detect
   }
   buttonvalue =  digitalRead(button);
   if( debug ) {
