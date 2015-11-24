@@ -1,8 +1,10 @@
 /* 8.12.2015 Kyle Bowerman
-* Last updated on 9.2.2015
+* Last updated on 11.23.2015
 * sparkcore temprature sensors to UBidots
 * from: https://particle.hackster.io/AgustinP/logging-temperature-data-using-the-spark-core
 * from: spark-temp, OLEDTEST, 6SPARKTEMP
+* 11.23.2015 created realy screen  (vx.x13)
+*            push button on realy screen  (vx.x14)
 * purpose:
 *   1.  uses hardcoded address in array instead of calling by index.
 *   2.  fix getting, prinint and pushing temp values when they are disconnected (-196)
@@ -86,7 +88,7 @@ void loop()
     oled.setCursor(0,0);
     //oled << "Count " << endl << "changed " << endl <<  lastDeviceCount << " " << deviceCount << endl;
     oled.display();
-    //delay(1000);     // Delay 1000 ms
+    //delay(5000);     // Delay 1000 ms
     oled.clear(PAGE); // Clear the buffer.
     Serial << " The device Count Changed " << lastDeviceCount << " " <<  deviceCount << endl;
 
@@ -115,6 +117,8 @@ void loop()
 
   if (encoderPos == 4 )  oPrintInfo();
   if (encoderPos == 5 )  oPrintInfo5();
+  if (encoderPos == 6 )  oPrintRelayMode();
+  //                            Don't intrrupt info screens to report no device
   if (deviceCount == 0 && encoderPos < 4 && encoderPos > 0 ) oPrintNoDevices() ;
 
   lastime = thistime;
@@ -159,7 +163,7 @@ void debugSerial(int i ) {
 }
 
 void dispatchEncoder(){
-    if (encoderPos > 5 ) encoderPos = 5;
+    if (encoderPos > 6 ) encoderPos = 6;
     if (encoderPos < 0 ) encoderPos = 0;
     setModeFunc(String(encoderPos));
     if (deviceCount > 0 ) temperatureJob();
@@ -216,14 +220,14 @@ void oPrintInfo() {
 
 void oPrintInfo5() {
   uint32_t freemem = System.freeMemory();
-    oled.clear(PAGE);
-    oled.setCursor(0,0);
-    oled.print(MYVERSION);
-    oled.setCursor(0,10);
-    oled << "MEMORY: " << endl << freemem << endl;
-    oled << "BUTTON: " << buttonvalue << endl;
-    oled << "sVer:" << System.version().c_str() << endl;
-    oled.display();
+  oled.clear(PAGE);
+  oled.setCursor(0,0);
+  oled.print(MYVERSION);
+  oled.setCursor(0,10);
+  oled << "MEMORY: " << endl << freemem << endl;
+  oled << "BUTTON: " << buttonvalue << endl;
+  oled << "sVer:" << System.version().c_str() << endl;
+  oled.display();
 }
 
 void oPrintNoDevices() {
@@ -233,6 +237,21 @@ void oPrintNoDevices() {
   oled << "NO" << endl << "DEVICES" << endl;
   oled.setFontType(0);
   oled.display();
+}
+
+void oPrintRelayMode() {
+  if ( buttonvalue == 0 ) {
+    // calling relayFunc("on"); crashes so replicating function
+    digitalWrite(relay, HIGH);
+    relayTimer.start();
+  }
+  oled.clear(PAGE);
+  oled.setCursor(0,0);
+  oled.setFontType(1);
+  oled << "RELAY" << endl <<  "   " << digitalRead(relay) << endl;
+  oled.setFontType(0);
+  oled.display();
+
 }
 
 void oDispatch(int tempIndex, float temperature) {
@@ -253,6 +272,7 @@ void oDispatch(int tempIndex, float temperature) {
     }
     if (displayMode == 4 )  oPrintInfo();
     if (displayMode == 5 )  oPrintInfo5();
+    if (displayMode == 6 )  oPrintRelayMode();
 
   Serial << "oled dispatch called " << endl;
 }
@@ -394,12 +414,13 @@ int queryDevices(String command) {
 int relayFunc(String command) {
   if(command == "on" ) {
     digitalWrite(relay, HIGH);
-    //Timer timer(5000, expireRelay);
+    oPrintRelayMode();
     relayTimer.start();
     return 1;
   }
   if(command == "off") {
     expireRelay();
+    oPrintRelayMode();
     return 0;
   }
 
@@ -409,6 +430,7 @@ int relayFunc(String command) {
 
 void expireRelay(){
   digitalWrite(relay, LOW);
+  oPrintRelayMode();
 }
 
 int setModeFunc(String command){ // now used for display mode and to toggle debug

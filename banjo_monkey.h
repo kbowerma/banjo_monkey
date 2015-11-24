@@ -6,8 +6,8 @@
 #define UBIVARSIZE 24
 #define PUSHFREQ 300
 #define FILENAME "banjo_monkey"
-#define MYVERSION "0.7.03"
-#define GETTEMPFEQ 5
+#define MYVERSION "0.7.14"
+#define GETTEMPFEQ 15
 #define PUSHTOUBIFLAG 1
 
 //Globals
@@ -52,6 +52,7 @@ char *formatTempToBody(float temperature, int tempIndex);
   void oDispatch(int tempIndex, float mytemp);
   void oPrintInfo();
   void oPrintInfo5();
+  void oPrintRelayMode();
   void oPrintNoDevices();
   void oPrintTemp(int index, float mytemp);
   void oPrintTemp2(int index, float mytemp);
@@ -60,8 +61,8 @@ char *formatTempToBody(float temperature, int tempIndex);
   int printEEPROMFunc(String command);
   int queryDevices(String command);
   int regDevice(String command);
-  Timer relayTimer(relayHoldDown, expireRelay);
   int regDeviceFunc(String command);
+  Timer relayTimer(relayHoldDown, expireRelay);
   int relayFunc(String command);
   int setModeFunc(String command);
   int setmode(String command);
