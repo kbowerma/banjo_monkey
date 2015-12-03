@@ -1,14 +1,16 @@
-
-
 //defines
 #define ONE_WIRE_BUS D2
 #define TOKEN "hsFRLnMcucOZlfLsQbH9BRbJpveccOc37ksq7eLOtjztxoEpZDA1D2wnWiuP"
 #define UBIVARSIZE 24
 #define PUSHFREQ 300
 #define FILENAME "banjo_monkey"
-#define MYVERSION "0.7.14"
+#define MYVERSION "0.8.16"
 #define GETTEMPFEQ 15
 #define PUSHTOUBIFLAG 1
+#define M1 A6
+#define M1POWER D5
+
+
 
 //Globals
 bool debug = true;
@@ -17,16 +19,18 @@ bool debug = true;
   char resultstr[64];
   int button = D4;
   int buttonvalue = 0;
-  int displayMode = 2;
+  int displayMode = 4;
   int deviceCount, lastDeviceCount, lastime, mycounter,thistime, lasttime = 0;
   int prevPos = 0;
   int value = 0;
   int encoderA = A0;
   int encoderB = A1;
+  int M1PCT = 0;
   int mydelay = 250;
   int relay = D3;
   float temperature = 0.0;
   int relayHoldDown = 30000;
+  int moistureCheckerFreq = 7200;
   volatile bool A_set = false;
   volatile bool B_set = false;
   volatile int encoderPos = 0;
@@ -50,13 +54,6 @@ char *formatTempToBody(float temperature, int tempIndex);
   double freqChecker();
   int getDeviceCount();
   void oDispatch(int tempIndex, float mytemp);
-  void oPrintInfo();
-  void oPrintInfo5();
-  void oPrintRelayMode();
-  void oPrintNoDevices();
-  void oPrintTemp(int index, float mytemp);
-  void oPrintTemp2(int index, float mytemp);
-  void oPrintTemp3(int index, float mytemp);
   void printAddress(DeviceAddress deviceAddress);
   int printEEPROMFunc(String command);
   int queryDevices(String command);
@@ -68,23 +65,22 @@ char *formatTempToBody(float temperature, int tempIndex);
   int setmode(String command);
   void temperatureJob();
 
+
 //Declarations
 MicroOLED oled;
  OneWire oneWire(ONE_WIRE_BUS);
  DallasTemperature sensor(&oneWire);
  HttpClient http;
 
+   //devices
+   DeviceAddress deviceIndexArray[5];  //dynamic Array
+   DeviceAddress outsideAddress = { 0x28, 0xe, 0x52, 0x58, 0x6, 0x0, 0x0, 0xe };
+   DeviceAddress floorAddress = { 0x28, 0x56, 0xB1, 0x3A, 0x06, 0x00, 0x00, 0x82 };
+   DeviceAddress pitAddress = { 0x28, 0x31, 0x26, 0x59, 0x06, 0x00, 0x00, 0x3A };
+   DeviceAddress boardAddress = { 0x28, 0x7E, 0xF7, 0x25, 0x03, 0x00, 0x00, 0x77 };
+   DeviceAddress*  deviceAddressArray[4] =  { &outsideAddress, &floorAddress, &pitAddress, &boardAddress } ;
+   String deviceNames[4]= { "out", "flr", "pit", "brd" };
 
-
- //devices
- // encolusre address   deviceIndexArray[0]:  28 7E F7 25 03 00 00 77
-  DeviceAddress deviceIndexArray[5];  //dynamic Array
-  DeviceAddress outsideAddress = { 0x28, 0xe, 0x52, 0x58, 0x6, 0x0, 0x0, 0xe };
-  DeviceAddress floorAddress = { 0x28, 0x56, 0xB1, 0x3A, 0x06, 0x00, 0x00, 0x82 };
-  DeviceAddress pitAddress = { 0x28, 0x31, 0x26, 0x59, 0x06, 0x00, 0x00, 0x3A };
-  DeviceAddress boardAddress = { 0x28, 0x7E, 0xF7, 0x25, 0x03, 0x00, 0x00, 0x77 };
-  DeviceAddress*  deviceAddressArray[4] =  { &outsideAddress, &floorAddress, &pitAddress, &boardAddress } ;
-  String deviceNames[4]= { "out", "flr", "pit", "brd" };
 
 
 /* Device Addresses
@@ -116,18 +112,18 @@ MicroOLED oled;
 *
 *      A0   ENCODER PinA
 *      A1   ENCODER PinB
-*      A2
+*      A2   SPI chip select
 *      A3   OLED SCK
 *      A4
 *      A5   OLED MOSI
-*      A6   -
+*      A6   proposed mositure read
 *      A7
 *      D0
 *      D1
 *      D2   ONEWIRE bus
 *      D3   Relay
 *      D4  Encoder Button
-*      D5
+*      D5   proposed moisture power
 *      D6   OLED D/C
 *      D7   OLED reset
 *

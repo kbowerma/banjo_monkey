@@ -5,6 +5,10 @@
 * from: spark-temp, OLEDTEST, 6SPARKTEMP
 * 11.23.2015 created realy screen  (vx.x13)
 *            push button on realy screen  (vx.x14)
+*             moisture on setmode 7 (v0.7.15)
+* 11.24.2015  Stablized enocerPos / displayMode  (v0.7.16)
+* 11.24.2015  Trying to get timer for moisture checker, kills encoder #3
+*             Switch to do every 7200 cycles seems to be stable (v.0.8.16)
 * purpose:
 *   1.  uses hardcoded address in array instead of calling by index.
 *   2.  fix getting, prinint and pushing temp values when they are disconnected (-196)
@@ -19,6 +23,8 @@
  #include "lib/OneWire/OneWire.h"
  #include "lib/SparkDallas/spark-dallas-temperature.h"
  #include "banjo_monkey.h"
+ #include "oPrint.h"
+
 
 
 void setup()
@@ -61,15 +67,12 @@ void setup()
   pinMode(encoderA, INPUT_PULLUP);
   pinMode(encoderB, INPUT_PULLUP);
   pinMode(button,INPUT_PULLUP);
+  pinMode(M1,INPUT_PULLDOWN);
   pinMode(relay, OUTPUT);
+  pinMode(M1POWER, OUTPUT);
+
   attachInterrupt(encoderA, doEncoderA, CHANGE);
   attachInterrupt(encoderB, doEncoderB, CHANGE);
-
- // temperatureJob();  // do this one time so the first screen gets displayed
-
-
-
-
 
 }
 
@@ -104,8 +107,8 @@ void loop()
   }
   buttonvalue =  digitalRead(button);
   if( debug ) {
-    Serial << mycounter << " freq: " << freqChecker() << "Hz | enocderPos: ";
-    Serial << encoderPos << " | buttonvalue: " << buttonvalue << endl;
+    Serial <<" mycounter: " << mycounter << " freq: " << freqChecker() << "Hz | encoderPos: ";
+    Serial << encoderPos << " | buttonvalue: " << buttonvalue << " displayMode: " << displayMode << endl;
   }
 
   //encoder
@@ -118,15 +121,26 @@ void loop()
   if (encoderPos == 4 )  oPrintInfo();
   if (encoderPos == 5 )  oPrintInfo5();
   if (encoderPos == 6 )  oPrintRelayMode();
+  if (encoderPos == 7 )  oPrintMoisture();
   //                            Don't intrrupt info screens to report no device
   if (deviceCount == 0 && encoderPos < 4 && encoderPos > 0 ) oPrintNoDevices() ;
 
-  lastime = thistime;
+  // check the moisure every moistureCheckerFreq (60 -about 20 seconds) currently 7200 ~ 1 hour
+  if ( mycounter % moistureCheckerFreq == 0 ) {
+    int lastDispalyMode = displayMode;
+    oPrintMoisture();
+    displayMode = encoderPos = lastDispalyMode;
+
+  }
+
+  // always last
+  lastime = thistime;  // for frequency checker
   delay(mydelay);
   thistime = millis();
 
 }
 
+// -------- Functions --------------------
 char *formatTempToBody(float temperature, int tempIndex) {
     static char retbuf[64];
     String s = "{\"value\": ";
@@ -163,7 +177,7 @@ void debugSerial(int i ) {
 }
 
 void dispatchEncoder(){
-    if (encoderPos > 6 ) encoderPos = 6;
+    if (encoderPos > 7 ) encoderPos = 7;
     if (encoderPos < 0 ) encoderPos = 0;
     setModeFunc(String(encoderPos));
     if (deviceCount > 0 ) temperatureJob();
@@ -201,59 +215,6 @@ int getDeviceCount() {
     return deviceCount;
 }
 
-void oPrintInfo() {
-    oled.clear(PAGE);
-    oled.setCursor(0,0);
-    oled.print(MYVERSION);
-    oled.setCursor(0,10);
-    oled << freqChecker() << " Hz";
-    oled.setCursor(0,20);
-    oled.print("pfreq ");
-    oled.print(PUSHFREQ);
-    oled.setCursor(0,30);
-    oled.print("devices ");
-    oled.print(deviceCount);
-    oled.setCursor(0,40);
-    oled.print(convertMillisToHuman(millis()));
-    oled.display();
-}
-
-void oPrintInfo5() {
-  uint32_t freemem = System.freeMemory();
-  oled.clear(PAGE);
-  oled.setCursor(0,0);
-  oled.print(MYVERSION);
-  oled.setCursor(0,10);
-  oled << "MEMORY: " << endl << freemem << endl;
-  oled << "BUTTON: " << buttonvalue << endl;
-  oled << "sVer:" << System.version().c_str() << endl;
-  oled.display();
-}
-
-void oPrintNoDevices() {
-  oled.clear(PAGE);
-  oled.setCursor(0,0);
-  oled.setFontType(1);
-  oled << "NO" << endl << "DEVICES" << endl;
-  oled.setFontType(0);
-  oled.display();
-}
-
-void oPrintRelayMode() {
-  if ( buttonvalue == 0 ) {
-    // calling relayFunc("on"); crashes so replicating function
-    digitalWrite(relay, HIGH);
-    relayTimer.start();
-  }
-  oled.clear(PAGE);
-  oled.setCursor(0,0);
-  oled.setFontType(1);
-  oled << "RELAY" << endl <<  "   " << digitalRead(relay) << endl;
-  oled.setFontType(0);
-  oled.display();
-
-}
-
 void oDispatch(int tempIndex, float temperature) {
 
     if (displayMode == 0 ) {
@@ -273,58 +234,12 @@ void oDispatch(int tempIndex, float temperature) {
     if (displayMode == 4 )  oPrintInfo();
     if (displayMode == 5 )  oPrintInfo5();
     if (displayMode == 6 )  oPrintRelayMode();
+    if (displayMode == 7 )  oPrintMoisture();
+
+    //Turn off moisture Power if not in dsiaplyMode = 7
+    if (displayMode != 7 ) digitalWrite(M1POWER, LOW);
 
   Serial << "oled dispatch called " << endl;
-}
-
-void oPrintTemp(int index, float mytemp){
-    oled.setFontType(0);
-    oled.setCursor(0,0);
-    oled.print("devices ");
-    oled.print(sensor.getDeviceCount());
-    oled.setCursor(0,index*12+12);
-    oled.print("T");
-    oled.print(index);
-    oled.print(" ");
-    oled.print(mytemp);
-    oled.display();
-
-}
-
-void oPrintTemp2(int index, float mytemp){
-    oled.setFontType(0);
-    oled.setCursor(0,0);
-    oled.setCursor(0,index*12);
-    oled.setColor(BLACK);
-    oled.print("T");
-    oled.print(index);
-    oled.setColor(WHITE);
-    oled.print(" ");
-    oled.print(mytemp);
-    oled.display();
-
-}
-
-void oPrintTemp3(int index, float mytemp){
-    oled.setFontType(0);
-    oled.setCursor(0,0);
-    oled.setCursor(0,index*12);
-    String name = deviceNames[index];
-    String shortname = name.substring(0,4);
-    oled << shortname;
-    oled.print(" ");
-    if (mytemp > 0 ) {
-    oled.print(mytemp);
-    }
-
-    if (mytemp < 0 ) {
-    oled.print("     ");
-
-    Particle.publish("onewireloose", String(index) );
-    Serial << "loose of onewire " << mytemp << "index " << index << endl;
-    }
-    oled.display();
-
 }
 
 void printAddress(DeviceAddress deviceAddress) {
@@ -412,6 +327,8 @@ int queryDevices(String command) {
 }
 
 int relayFunc(String command) {
+  // need to set the displayMode and encoderPos otherwise it wont display
+  displayMode = encoderPos = 6;
   if(command == "on" ) {
     digitalWrite(relay, HIGH);
     oPrintRelayMode();
@@ -426,8 +343,6 @@ int relayFunc(String command) {
 
 }
 
-
-
 void expireRelay(){
   digitalWrite(relay, LOW);
   oPrintRelayMode();
@@ -438,6 +353,7 @@ int setModeFunc(String command){ // now used for display mode and to toggle debu
     oled.clear(PAGE);
     oled.display();
     displayMode = command.toInt();
+    encoderPos = displayMode;
     return displayMode;
     }
     if(command == "debug"){
