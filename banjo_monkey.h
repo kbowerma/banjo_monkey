@@ -1,15 +1,16 @@
 //defines
 #define ONE_WIRE_BUS D2
-#define TOKEN "hsFRLnMcucOZlfLsQbH9BRbJpveccOc37ksq7eLOtjztxoEpZDA1D2wnWiuP"
 #define UBIVARSIZE 24
 #define PUSHFREQ 300
 #define FILENAME "banjo_monkey"
-#define MYVERSION "0.8.19"
+#define MYVERSION "0.8.21c"
 #define GETTEMPFEQ 15
 #define PUSHTOUBIFLAG 1
 #define M1 A6
 #define M1POWER D5
+#define M1DESC "bonsai"
 
+#include "lib/bowermanKeys.h"
 
 
 //Globals
@@ -27,6 +28,10 @@ bool debug = true;
   int encoderA = A0;
   int encoderB = A1;
   int M1PCT = 0;
+  double temp1 = 0.0;
+  double temp2 = 0.0;
+  double temp3= 0.0;
+  double temp4 = 0.0;
   int mydelay = 250;
   int relay = D3;
   float temperature = 0.0;

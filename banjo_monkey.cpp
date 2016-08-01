@@ -55,6 +55,11 @@ void setup()
   Particle.variable("m1pct",M1PCT);
   Particle.variable("version",MYVERSION);
   Particle.variable("file",FILENAME);
+  Particle.variable("outside_temp",temp1);
+  Particle.variable("room_temp",temp2);
+  Particle.variable("pit_temp",temp3);
+  Particle.variable("board_temp",temp4);
+  Particle.variable("m1desc",M1DESC);
   Particle.function("q", queryDevices);
   Particle.function("setmode", setModeFunc);
   Particle.function("printEEProm", printEEPROMFunc);
@@ -387,6 +392,10 @@ void temperatureJob() {
     for (int i =0; i < deviceCount; i++ ) {
         gotTemp = sensor.getTempF(*deviceAddressArray[i]);
         if (gotTemp < -195 ) continue;
+        if (i+1 == 1 ) temp1 = gotTemp;
+        if (i+1 == 2 ) temp2 = gotTemp;
+        if (i+1 == 3 ) temp3 = gotTemp;
+        if (i+1 == 4 ) temp4 = gotTemp;
         Serial << "gotTemp() = "  << i << " " << gotTemp << endl;
         request.body = formatTempToBody(gotTemp, i);
       //  if (mycounter % PUSHFREQ == 0  && PUSHTOUBIFLAG == 1 ) {
