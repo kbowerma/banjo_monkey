@@ -9,10 +9,12 @@
 * 11.24.2015  Stablized enocerPos / displayMode  (v0.7.16)
 * 11.24.2015  Trying to get timer for moisture checker, kills encoder #3
 *             Switch to do every 7200 cycles seems to be stable (v.0.8.16)
+* 8.31.2016  Publish IP  (v8.21.d)
 * purpose:
 *   1.  uses hardcoded address in array instead of calling by index.
 *   2.  fix getting, prinint and pushing temp values when they are disconnected (-196)
 *   3.  fix ubidots to always go to the right source
+*
 */
 
 #include "application.h"
@@ -81,6 +83,12 @@ void setup()
 
   attachInterrupt(encoderA, doEncoderA, CHANGE);
   attachInterrupt(encoderB, doEncoderB, CHANGE);
+
+  IPAddress myIP = WiFi.localIP();
+  String ipStr = String(myIP[0])+"."+String(myIP[1])+"."+String(myIP[2])+"."+String(myIP[3]);
+  Particle.publish("LocalIP", ipStr, 60,PRIVATE);
+  String myVersion = System.version().c_str();
+  Particle.publish("Version", myVersion, 60,PRIVATE);
 
 }
 
