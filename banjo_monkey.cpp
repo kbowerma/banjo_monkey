@@ -14,6 +14,8 @@
 *   1.  uses hardcoded address in array instead of calling by index.
 *   2.  fix getting, prinint and pushing temp values when they are disconnected (-196)
 *   3.  fix ubidots to always go to the right source
+* 10.11.2017 wasnt registring variables or functions with cloud so I moved those to the begining of the setup.
+  I guess there is a 5 second timout or something.
 *
 */
 
@@ -31,7 +33,19 @@
 
 void setup()
 {
-
+  Particle.variable("devices",deviceCount);
+  Particle.variable("m1pct",M1PCT);
+  Particle.variable("version",MYVERSION);
+  Particle.variable("file",FILENAME);
+  Particle.variable("outside_temp",temp1);
+  Particle.variable("room_temp",temp2);
+  Particle.variable("pit_temp",temp3);
+  Particle.variable("board_temp",temp4);
+  Particle.variable("m1desc",M1DESC);
+  Particle.function("q", queryDevices);
+  Particle.function("setmode", setModeFunc);
+  Particle.function("printEEProm", printEEPROMFunc);
+  Particle.function("relay", relayFunc);
 
   oled.begin();    // Initialize the OLED
   oled.clear(ALL); // Clear the display's internal memory
@@ -52,7 +66,7 @@ void setup()
   request.hostname = "things.ubidots.com";
   Serial.begin(9600);
   sensor.begin();
-
+/*
   Particle.variable("devices",deviceCount);
   Particle.variable("m1pct",M1PCT);
   Particle.variable("version",MYVERSION);
@@ -66,7 +80,7 @@ void setup()
   Particle.function("setmode", setModeFunc);
   Particle.function("printEEProm", printEEPROMFunc);
   Particle.function("relay", relayFunc);
-
+*/
   //Need to set the device Index Array at startup
   deviceCount = getDeviceCount();
   queryDevices("auto");

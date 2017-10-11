@@ -3,7 +3,7 @@
 #define UBIVARSIZE 24
 #define PUSHFREQ 300
 #define FILENAME "banjo_monkey"
-#define MYVERSION "0.8.21d"
+#define MYVERSION "0.8.21e"
 #define GETTEMPFEQ 15
 #define PUSHTOUBIFLAG 1
 #define M1 A6
